@@ -1,0 +1,15 @@
+@API_HostAddress = http://localhost:5127
+
+@baseAddress = https://www.ravelry.com
+@tokenPath = /oauth2/token
+@authorizePath = /oauth2/auth
+
+###
+
+# Authorize your user first
+GET {{baseAddress}}{{authorizePath}}
+Accept: application/json
+
+# Use after auth has been requested
+GET {{baseAddress}}{{tokenPath}}
+Accept: application/json
