@@ -6,3 +6,7 @@ This project is meant to explore new concepts and imrpove my development abiliti
 The project is also meant to be informative to other developers (or me in the future) who like me are interested in working with Ravelry's API. 
 
 Project is ongoing.
+
+## Wiki
+
+Please check wiki for details on Postman setup.
