@@ -40,13 +40,13 @@ public class Program
             options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
         });
 
-        //builder.Services.AddHttpClient<IAuth2Service, Auth2Service>();
-        //builder.Services.AddSingleton<IAuth2Service>(sp =>
-        //{
-        //    var httpClient = sp.GetRequiredService<HttpClient>();
-        //    var config = sp.GetRequiredService<IConfiguration>();
-        //    return new Auth2Service(httpClient, config);
-        //});
+        builder.Services.AddHttpClient<IAuth2Service, Auth2Service>();
+        builder.Services.AddSingleton<IAuth2Service>(sp =>
+        {
+            var httpClient = sp.GetRequiredService<HttpClient>();
+            var config = sp.GetRequiredService<IConfiguration>();
+            return new Auth2Service(httpClient, config);
+        });
 
         builder.Services.AddCors(options =>
         {

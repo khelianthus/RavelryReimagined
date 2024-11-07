@@ -1,5 +1,7 @@
 ﻿using API.Service;
 using Microsoft.AspNetCore.Mvc;
+using RavelryReimagined.API.Models;
+using System.Text.Json;
 
 namespace API.Controllers;
 
@@ -13,14 +15,20 @@ public class RavelryController : Controller
         this.auth2Service = auth2Service;
     }
 
+    /// <summary>
+    /// Get current-user.json from Ravelry API
+    /// </summary>
+    /// <param name="accessToken">Use your authenticated accesstoken from token controller</param>
+    /// <returns>current-user.json</returns>
     [HttpGet("current-user")]
-    public async Task<IActionResult> GetCurrentUser()
+    public async Task<IActionResult> GetCurrentUser(string accessToken)
     {
         try
         {
-            var accessToken = await auth2Service.GetAccessTokenAsync();
-            var userData = await auth2Service.GetCurrentUserAsync(accessToken);
-            return Ok(userData);
+            var userData = await auth2Service.GetCurrentUser(accessToken);
+
+            var mappedUser = JsonSerializer.Deserialize<CurrentUser>(userData);
+            return Ok(mappedUser);
         }
         catch (Exception ex)
         {
