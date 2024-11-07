@@ -15,8 +15,8 @@ namespace API.Controllers;
 
 public class TokenController : ControllerBase
 {
-    private readonly HttpClient _client;
-    private readonly ILogger<TokenController> _logger;
+    private readonly HttpClient httpClient;
+    private readonly ILogger<TokenController> logger;
 
     private readonly string clientId = Environment.GetEnvironmentVariable("clientId");
     private readonly string clientSecret = Environment.GetEnvironmentVariable("clientSecret");
@@ -24,8 +24,7 @@ public class TokenController : ControllerBase
 
     public TokenController(ILogger<TokenController> logger)
     {
-        _client = new HttpClient();
-        _logger = logger;
+        this.logger = logger;
     }
 
     //Clients credentials flow
@@ -33,11 +32,9 @@ public class TokenController : ControllerBase
     //public async Task<string> GetAccessTokenWithClientCredentials()
     //{
 
-    //    // Add Basic Auth Header with client_id:client_secret base64-encoded
     //    var authToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
     //    _client.DefaultRequestHeaders.Add("Authorization", $"Basic {authToken}");
 
-    //    // Prepare request content
     //    var formData = new FormUrlEncodedContent(new[]
     //    {
     //    new KeyValuePair<string, string>("grant_type", "client_credentials")
@@ -64,14 +61,14 @@ public class TokenController : ControllerBase
     [HttpGet("authorize")]
     public IActionResult AuthorizeUserProfileOnly()
     {
-        var state = Guid.NewGuid().ToString("N"); // Generates a 32-character random string
+        var state = Guid.NewGuid().ToString("N"); 
 
         HttpContext.Session.SetString("oauth_state", state);
 
         var authorizationUrl = $"https://www.ravelry.com/oauth2/auth?response_type=code&client_id={clientId}&redirect_uri={redirectUri}&scope=profile-only&state={state}";
-        return Ok(new { visitThisUrlInYourBrowser = authorizationUrl });
+        //return Ok(new { visitThisUrlInYourBrowser = authorizationUrl });
         //Redirect funkar inte via swagger
-        //return Redirect(authorizationUrl);
+        return Redirect(authorizationUrl);
     }
 
     /// <summary>
@@ -104,12 +101,12 @@ public class TokenController : ControllerBase
         return BadRequest("Failed to retrieve access token.");
     }
 
-    private async Task<string> ExchangeProfileOnlyScopeCodeForToken(string code)
+    private async Task<string?> ExchangeProfileOnlyScopeCodeForToken(string code)
     {
         var authHeaderValue = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{clientId}:{clientSecret}"));
 
-        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeaderValue);
-        _client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
+        httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeaderValue);
+        httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/x-www-form-urlencoded"));
 
         var requestData = new FormUrlEncodedContent(new[]
         {
@@ -118,7 +115,7 @@ public class TokenController : ControllerBase
             new KeyValuePair<string, string>("redirect_uri", redirectUri) 
         });
 
-        var response = await _client.PostAsync("https://www.ravelry.com/oauth2/token", requestData);
+        var response = await httpClient.PostAsync("https://www.ravelry.com/oauth2/token", requestData);
 
         var tokenContent = await response.Content.ReadAsStringAsync();
 
@@ -129,41 +126,8 @@ public class TokenController : ControllerBase
         }
         else
         {
-            _logger.LogError("Failed to retrieve token: " + tokenContent);
+            logger.LogError("Failed to retrieve token: " + tokenContent);
             return null;
-        }
-    }
-
-    /// <summary>
-    /// Get the json of the current user after browser authorization and access token has been exchanged. Uri reference: */Token/current-user?accessToken={accessToken}
-    /// </summary>
-    /// <param name="accessToken">Comes from ExchangeProfileOnlyScopeCodeForToken</param>
-    /// <returns></returns>
-    [HttpGet("current-user")]
-    public async Task<IActionResult> GetCurrentUser([FromQuery] string accessToken)
-    {
-        var request = new HttpRequestMessage(HttpMethod.Get, "https://api.ravelry.com/current_user.json");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        HttpResponseMessage? response = null;
-
-        if (string.IsNullOrEmpty(accessToken))
-        {
-            return BadRequest("Access token is required.");
-        }
-
-        try
-        {
-            response = await _client.SendAsync(request);
-            response.EnsureSuccessStatusCode(); 
-
-            var content = await response.Content.ReadAsStringAsync();
-
-            return Ok(content);
-        }
-        catch (HttpRequestException ex)
-        {
-            Console.WriteLine($"Request failed: {ex.Message}");
-            return StatusCode((int)response.StatusCode, "Failed to retrieve current user data.");
         }
     }
 }

@@ -1,7 +1,8 @@
-﻿namespace API.Service;
+﻿using System.Text.Json;
+
+namespace API.Service;
 
 public interface IAuth2Service
 {
-    Task<string> GetAccessTokenAsync();
-    Task<string> GetCurrentUserAsync(string accessToken);
+    Task<string> GetCurrentUser(string accessToken);
 }
