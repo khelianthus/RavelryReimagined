@@ -22,9 +22,10 @@ public class TokenController : ControllerBase
     private readonly string clientSecret = Environment.GetEnvironmentVariable("clientSecret");
     private readonly string redirectUri = Environment.GetEnvironmentVariable("redirect_uri");
 
-    public TokenController(ILogger<TokenController> logger)
+    public TokenController(ILogger<TokenController> logger, HttpClient httpClient)
     {
         this.logger = logger;
+        this.httpClient = httpClient;
     }
 
     //Clients credentials flow
@@ -66,9 +67,9 @@ public class TokenController : ControllerBase
         HttpContext.Session.SetString("oauth_state", state);
 
         var authorizationUrl = $"https://www.ravelry.com/oauth2/auth?response_type=code&client_id={clientId}&redirect_uri={redirectUri}&scope=profile-only&state={state}";
-        //return Ok(new { visitThisUrlInYourBrowser = authorizationUrl });
+        return Ok(new { visitThisUrlInYourBrowser = authorizationUrl });
         //Redirect funkar inte via swagger
-        return Redirect(authorizationUrl);
+        //return Redirect(authorizationUrl);
     }
 
     /// <summary>
@@ -101,7 +102,7 @@ public class TokenController : ControllerBase
         return BadRequest("Failed to retrieve access token.");
     }
 
-    private async Task<string?> ExchangeProfileOnlyScopeCodeForToken(string code)
+    private async Task<object?> ExchangeProfileOnlyScopeCodeForToken(string code)
     {
         var authHeaderValue = Convert.ToBase64String(Encoding.ASCII.GetBytes($"{clientId}:{clientSecret}"));
 
@@ -122,7 +123,7 @@ public class TokenController : ControllerBase
         if (response.IsSuccessStatusCode)
         {
             var tokenData = JsonSerializer.Deserialize<TokenResponse>(tokenContent);
-            return tokenData?.AccessToken;
+            return tokenData;
         }
         else
         {

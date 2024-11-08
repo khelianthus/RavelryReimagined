@@ -58,6 +58,7 @@ public class Program
         });
         builder.Services.AddDistributedMemoryCache();  
         builder.Services.AddSession();
+        builder.Services.AddHttpClient();
 
 
         var app = builder.Build();
