@@ -6,10 +6,6 @@ using System.Text.Json;
 
 namespace API.Controllers;
 
-
-/// <summary>
-/// OAuth 2.0 flow. Start with authorize.
-/// </summary>
 [ApiController]
 [Route("[controller]")]
 
@@ -18,9 +14,9 @@ public class TokenController : ControllerBase
     private readonly HttpClient httpClient;
     private readonly ILogger<TokenController> logger;
 
-    private readonly string clientId = Environment.GetEnvironmentVariable("clientId");
-    private readonly string clientSecret = Environment.GetEnvironmentVariable("clientSecret");
-    private readonly string redirectUri = Environment.GetEnvironmentVariable("redirect_uri");
+    private readonly string clientId = Environment.GetEnvironmentVariable("clientId")!;
+    private readonly string clientSecret = Environment.GetEnvironmentVariable("clientSecret")!;
+    private readonly string redirectUri = Environment.GetEnvironmentVariable("redirect_uri")!;
 
     public TokenController(ILogger<TokenController> logger, HttpClient httpClient)
     {
@@ -28,38 +24,12 @@ public class TokenController : ControllerBase
         this.httpClient = httpClient;
     }
 
-    //Clients credentials flow
-    //[HttpGet("access-token")]
-    //public async Task<string> GetAccessTokenWithClientCredentials()
-    //{
-
-    //    var authToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
-    //    _client.DefaultRequestHeaders.Add("Authorization", $"Basic {authToken}");
-
-    //    var formData = new FormUrlEncodedContent(new[]
-    //    {
-    //    new KeyValuePair<string, string>("grant_type", "client_credentials")
-    //});
-
-    //    var tokenResponse = await _client.PostAsync("https://www.ravelry.com/oauth2/token", formData);
-    //    if (!tokenResponse.IsSuccessStatusCode)
-    //    {
-    //        throw new Exception($"Error fetching token: {tokenResponse.StatusCode}");
-    //    }
-
-    //    var tokenContent = await tokenResponse.Content.ReadAsStringAsync();
-
-    //    var tokenData = JsonSerializer.Deserialize<TokenResponse>(tokenContent);
-
-    //    return tokenData.AccessToken; 
-    //}
-
     /// <summary>
     /// Scope: profile-only
     /// </summary>
     /// <returns>Authorization url with scope profile-only</returns>
 
-    [HttpGet("authorize")]
+    [HttpGet("authorize-profile-only-scope")]
     public IActionResult AuthorizeUserProfileOnly()
     {
         var state = Guid.NewGuid().ToString("N"); 
@@ -70,6 +40,17 @@ public class TokenController : ControllerBase
         return Ok(new { visitThisUrlInYourBrowser = authorizationUrl });
         //Redirect funkar inte via swagger
         //return Redirect(authorizationUrl);
+    }
+
+    [HttpGet("authorize-offline-scope")]
+    public IActionResult AuthorizeUserOfflineScope()
+    {
+        var state = Guid.NewGuid().ToString("N");
+
+        HttpContext.Session.SetString("oauth_state", state);
+
+        var authorizationUrl = $"https://www.ravelry.com/oauth2/auth?response_type=code&client_id={clientId}&redirect_uri={redirectUri}&scope=offline&state={state}";
+        return Ok(new { visitThisUrlInYourBrowser = authorizationUrl });
     }
 
     /// <summary>
@@ -113,7 +94,8 @@ public class TokenController : ControllerBase
         {
             new KeyValuePair<string, string>("grant_type", "authorization_code"),
             new KeyValuePair<string, string>("code", code),
-            new KeyValuePair<string, string>("redirect_uri", redirectUri) 
+            new KeyValuePair<string, string>("redirect_uri", redirectUri),
+            new KeyValuePair<string, string>("scope", "offline")  
         });
 
         var response = await httpClient.PostAsync("https://www.ravelry.com/oauth2/token", requestData);
@@ -133,3 +115,32 @@ public class TokenController : ControllerBase
     }
 }
 
+#region
+
+//Clients credentials flow
+//[HttpGet("access-token")]
+//public async Task<string> GetAccessTokenWithClientCredentials()
+//{
+
+//    var authToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
+//    _client.DefaultRequestHeaders.Add("Authorization", $"Basic {authToken}");
+
+//    var formData = new FormUrlEncodedContent(new[]
+//    {
+//    new KeyValuePair<string, string>("grant_type", "client_credentials")
+//});
+
+//    var tokenResponse = await _client.PostAsync("https://www.ravelry.com/oauth2/token", formData);
+//    if (!tokenResponse.IsSuccessStatusCode)
+//    {
+//        throw new Exception($"Error fetching token: {tokenResponse.StatusCode}");
+//    }
+
+//    var tokenContent = await tokenResponse.Content.ReadAsStringAsync();
+
+//    var tokenData = JsonSerializer.Deserialize<TokenResponse>(tokenContent);
+
+//    return tokenData.AccessToken; 
+//}
+
+#endregion
