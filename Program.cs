@@ -48,6 +48,14 @@ public class Program
             return new Auth2Service(httpClient, config);
         });
 
+        builder.Services.AddHttpClient<IRavelryService, RavelryService>();
+        builder.Services.AddSingleton<IRavelryService>(sp =>
+        {
+            var httpClient = sp.GetRequiredService<HttpClient>();
+            var config = sp.GetRequiredService<IConfiguration>();
+            return new RavelryService(httpClient, config);
+        });
+
         builder.Services.AddCors(options =>
         {
             options.AddPolicy("AllowAll",

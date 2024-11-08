@@ -2,9 +2,8 @@
 
 namespace API.Models;
 
-
 /// <summary>
-/// Model for token response
+/// Model for auth 2.0 token response
 /// </summary>
 public class TokenResponse
 {
